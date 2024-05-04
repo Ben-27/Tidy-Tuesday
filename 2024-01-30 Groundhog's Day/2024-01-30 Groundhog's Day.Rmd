@@ -1,0 +1,55 @@
+---
+title: "Groundhog's Day"
+author: "Ben Absalon"
+date: "2024-04-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+tuesdata <- tidytuesdayR::tt_load('2024-01-30')
+groundhogs <- tuesdata$groundhogs
+predictions <-tuesdata$predictions
+```
+
+
+```{r}
+predictions_summary <- predictions %>%
+  select(id, year, shadow) %>%
+  filter(!is.na(shadow)) %>% # remove null predictions
+  group_by(year) %>%
+  summarize(
+    predictors = n(), 
+    shadows_seen = sum(ifelse(shadow == TRUE, 1, 0), na.rm = TRUE),
+    shadow_rate = round(shadows_seen / predictors, 3)
+  )
+
+predictions_summary %>% head(20)
+```
+
+```{r}
+predictions_summary %>%
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = predictors)) +
+  geom_line(aes(y = shadows_seen))
+  
+```
+
+```{r}
+predictions_summary %>%
+  ggplot(aes(year, shadow_rate)) + 
+  geom_line()
+```
+
+```{r}
+library(rpart)
+
+model <- rpart(shadow_rate ~ year, data = predictions_summary)
+
+plot(model)
+text(model, use.n = TRUE)
+```
+
